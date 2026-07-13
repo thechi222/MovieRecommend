@@ -1,0 +1,82 @@
+﻿{% extends "base.html" %}
+{% block title %}個人頁面 — CineMatch{% endblock %}
+{% block content %}
+<h1 class="text-3xl font-bold text-white mb-8">{{ request.user.username }} 的個人頁面</h1>
+
+<!-- 收藏清單 -->
+<div class="mb-12">
+    <h2 class="text-xl font-bold text-white mb-4">我的收藏 ({{ watchlist|length }})</h2>
+    {% if watchlist %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {% for item in watchlist %}
+        <a href="/movies/{{ item.movie.id }}/" class="movie-card bg-gray-900 rounded-xl overflow-hidden block">
+            {% if item.movie.poster_path %}
+            <img src="https://image.tmdb.org/t/p/w300{{ item.movie.poster_path }}" alt="{{ item.movie.title }}" class="w-full aspect-[2/3] object-cover">
+            {% else %}
+            <div class="w-full aspect-[2/3] bg-gray-800 flex items-center justify-center text-4xl">🎬</div>
+            {% endif %}
+            <div class="p-3">
+                <p class="text-white text-sm font-medium line-clamp-2">{{ item.movie.title }}</p>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-yellow-400 text-xs">★</span>
+                    <span class="text-yellow-300 text-xs">{{ item.movie.vote_average|floatformat:1 }}</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-500">還沒有收藏任何電影，去<a href="/movies/" class="text-blue-400 hover:underline">瀏覽電影</a>吧！</p>
+    {% endif %}
+</div>
+
+<!-- 個人化推薦 -->
+{% if personal_recs %}
+<div class="mb-12">
+    <h2 class="text-xl font-bold text-white mb-4">根據你的收藏推薦</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {% for movie in personal_recs %}
+        <a href="/movies/{{ movie.id }}/" class="movie-card bg-gray-900 rounded-xl overflow-hidden block">
+            {% if movie.poster_path %}
+            <img src="https://image.tmdb.org/t/p/w300{{ movie.poster_path }}" alt="{{ movie.title }}" class="w-full aspect-[2/3] object-cover">
+            {% else %}
+            <div class="w-full aspect-[2/3] bg-gray-800 flex items-center justify-center text-4xl">🎬</div>
+            {% endif %}
+            <div class="p-3">
+                <p class="text-white text-sm font-medium line-clamp-2">{{ movie.title }}</p>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-yellow-400 text-xs">★</span>
+                    <span class="text-yellow-300 text-xs">{{ movie.vote_average|floatformat:1 }}</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- 觀看紀錄 -->
+<div>
+    <h2 class="text-xl font-bold text-white mb-4">最近觀看</h2>
+    {% if history %}
+    <div class="space-y-2">
+        {% for item in history %}
+        <a href="/movies/{{ item.movie.id }}/" class="flex items-center gap-4 bg-gray-900 rounded-xl p-3 hover:bg-gray-800 transition">
+            {% if item.movie.poster_path %}
+            <img src="https://image.tmdb.org/t/p/w92{{ item.movie.poster_path }}" alt="{{ item.movie.title }}" class="w-12 h-16 object-cover rounded">
+            {% else %}
+            <div class="w-12 h-16 bg-gray-800 rounded flex items-center justify-center text-2xl">🎬</div>
+            {% endif %}
+            <div>
+                <p class="text-white font-medium">{{ item.movie.title }}</p>
+                <p class="text-gray-400 text-sm">{{ item.movie.genre }}</p>
+            </div>
+            <div class="ml-auto text-yellow-400">★ {{ item.movie.vote_average|floatformat:1 }}</div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-500">還沒有觀看紀錄。</p>
+    {% endif %}
+</div>
+{% endblock %}

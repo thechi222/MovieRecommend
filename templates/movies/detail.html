@@ -1,0 +1,98 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ movie.title }} — CineMatch{% endblock %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-8 mb-12">
+    <div class="flex-shrink-0">
+        {% if movie.poster_path %}
+        <img src="https://image.tmdb.org/t/p/w400{{ movie.poster_path }}" alt="{{ movie.title }}" class="w-64 rounded-xl shadow-lg mx-auto">
+        {% else %}
+        <div class="w-64 aspect-[2/3] bg-gray-800 rounded-xl flex items-center justify-center text-6xl mx-auto">🎬</div>
+        {% endif %}
+    </div>
+    <div class="flex-1">
+        <h1 class="text-4xl font-bold text-white mb-1">{{ movie.title }}</h1>
+        {% if movie.original_title and movie.original_title != movie.title %}
+        <p class="text-gray-400 text-lg mb-3">{{ movie.original_title }}</p>
+        {% endif %}
+        <div class="flex items-center gap-4 mb-4">
+            <span class="text-yellow-400 text-2xl font-bold">★ {{ movie.vote_average|floatformat:1 }}</span>
+            <span class="text-gray-400">{{ movie.vote_count }} 人評分</span>
+            {% if movie.release_year %}
+            <span class="text-gray-400">{{ movie.release_year }} 年</span>
+            {% endif %}
+        </div>
+        {% if genre_list %}
+        <div class="flex flex-wrap gap-2 mb-5">
+            {% for g in genre_list %}
+            <span class="bg-blue-900 text-blue-300 px-3 py-1 rounded-full text-sm">{{ g }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if movie.overview %}
+        <div class="bg-gray-900 rounded-xl p-5 mb-5">
+            <h3 class="text-gray-400 text-sm mb-2">劇情簡介</h3>
+            <p class="text-gray-200 leading-relaxed">{{ movie.overview }}</p>
+        </div>
+        {% endif %}
+
+        {% if request.user.is_authenticated %}
+        <button id="watchlist-btn" onclick="toggleWatchlist({{ movie.id }})"
+            class="{% if in_watchlist %}bg-gray-600 hover:bg-gray-500 text-white{% else %}bg-yellow-500 hover:bg-yellow-600 text-black{% endif %} font-bold px-6 py-2 rounded-lg transition">
+            {% if in_watchlist %}♥ 已收藏{% else %}♥ 加入收藏{% endif %}
+        </button>
+        {% else %}
+        <a href="/users/login/?next=/movies/{{ movie.id }}/" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg transition inline-block">登入後可收藏</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if recommendations %}
+<div>
+    <h2 class="text-2xl font-bold text-white mb-5">你可能也喜歡</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {% for rec in recommendations %}
+        <a href="/movies/{{ rec.id }}/" class="movie-card bg-gray-900 rounded-xl overflow-hidden block shadow hover:shadow-blue-900">
+            {% if rec.poster_path %}
+            <img src="https://image.tmdb.org/t/p/w300{{ rec.poster_path }}" alt="{{ rec.title }}" class="w-full aspect-[2/3] object-cover">
+            {% else %}
+            <div class="w-full aspect-[2/3] bg-gray-800 flex items-center justify-center text-4xl">🎬</div>
+            {% endif %}
+            <div class="p-3">
+                <p class="text-white font-medium text-sm leading-tight line-clamp-2">{{ rec.title }}</p>
+                <div class="flex items-center gap-1 mt-1">
+                    <span class="text-yellow-400 text-xs">★</span>
+                    <span class="text-yellow-300 text-xs">{{ rec.vote_average|floatformat:1 }}</span>
+                </div>
+                <p class="text-blue-400 text-xs mt-1 truncate">{{ rec.genre }}</p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleWatchlist(movieId) {
+    fetch(`/users/watchlist/${movieId}/`, {
+        method: "POST",
+        headers: {
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRFToken": "{{ csrf_token }}"
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        const btn = document.getElementById("watchlist-btn");
+        if (data.in_watchlist) {
+            btn.textContent = "♥ 已收藏";
+            btn.className = "bg-gray-600 hover:bg-gray-500 text-white font-bold px-6 py-2 rounded-lg transition";
+        } else {
+            btn.textContent = "♥ 加入收藏";
+            btn.className = "bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-6 py-2 rounded-lg transition";
+        }
+    });
+}
+</script>
+{% endblock %}
