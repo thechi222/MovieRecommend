@@ -1,5 +1,5 @@
-﻿from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
+﻿import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 import django
 import os
 import sys
@@ -15,6 +15,7 @@ from movies.models import Movie
 def get_similar_movies(movie_id, top_n=10):
     """
     輸入電影 ID，回傳最相似的 top_n 部電影
+    用矩陣運算一次算完，比逐一比對快很多
     """
     try:
         target = Movie.objects.get(id=movie_id)
@@ -24,16 +25,18 @@ def get_similar_movies(movie_id, top_n=10):
     if not target.vector:
         return []
 
-    all_movies = Movie.objects.exclude(id=movie_id).filter(vector__isnull=False)
+    # 一次撈所有有向量的電影（排除自己）
+    all_movies = list(Movie.objects.exclude(id=movie_id).filter(vector__isnull=False))
+    if not all_movies:
+        return []
 
+    # 建立矩陣（一次算完所有相似度，比 for loop 快很多）
     target_vec = np.array(target.vector).reshape(1, -1)
-    results = []
+    all_vecs = np.array([m.vector for m in all_movies])
 
-    for movie in all_movies:
-        movie_vec = np.array(movie.vector).reshape(1, -1)
-        score = cosine_similarity(target_vec, movie_vec)[0][0]
-        results.append((score, movie))
+    # 一次計算所有相似度
+    scores = cosine_similarity(target_vec, all_vecs)[0]
 
-    # 依相似度排序，取前 top_n
-    results.sort(key=lambda x: x[0], reverse=True)
-    return [movie for score, movie in results[:top_n]]
+    # 取前 top_n
+    top_indices = np.argsort(scores)[::-1][:top_n]
+    return [all_movies[i] for i in top_indices]
